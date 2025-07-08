@@ -4,6 +4,9 @@ import * as SecureStore from 'expo-secure-store';
 import { generateUUID, isValidUUID } from '@/utils/uuid';
 import { DEFAULT_USER_ID } from '@/constants/user';
 
+// Add Supabase import at the top
+import { supabase } from '@/lib/supabase';
+
 interface User {
   id: string;
   email: string;
@@ -253,6 +256,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_LOADING', payload: true });
 
     try {
+      // Sign out from Supabase auth if we're using it
+      try {
+        const { error: signOutError } = await supabase.auth.signOut();
+        if (signOutError) {
+          console.warn('Supabase sign out error:', signOutError);
+        }
+      } catch (error) {
+        console.warn('Supabase sign out failed:', error);
+      }
+      
       // Clear all stored authentication data
       await deleteSecurely('auth_token');
       await deleteSecurely('user_data');

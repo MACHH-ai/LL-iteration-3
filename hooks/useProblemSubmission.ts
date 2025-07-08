@@ -47,32 +47,54 @@ export function useProblemSubmission() {
     // Reset previous state
     setError(null);
     setResult(null);
+    setIsSubmitting(true);
 
     // Validate input data
     if (!data.title.trim()) {
       setError('Problem title is required');
+      setIsSubmitting(false);
       return null;
     }
 
     if (!data.textContent?.trim() && !data.imageData && !data.voiceUrl) {
       setError('Problem content is required');
+      setIsSubmitting(false);
       return null;
     }
 
-    setIsSubmitting(true);
 
     try {
+      // Get current session for authentication
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        throw new Error('Authentication error. Please sign in again.');
+      }
+
       // Determine user ID to use
       let userId: string | undefined;
+      let authHeaders: Record<string, string> = {};
       
-      if (isAuthenticated && user?.id) {
+      if (session && session.access_token) {
+        // Authenticated user with valid session
+        authHeaders.Authorization = `Bearer ${session.access_token}`;
+        
+        if (user?.id && isValidUUID(user.id)) {
+          userId = user.id;
+          console.log('Using authenticated user ID:', userId);
+        } else {
+          console.error('Invalid user ID format:', user?.id);
+          throw new Error('Invalid user session. Please sign in again.');
+        }
+      } else if (isAuthenticated && user?.id) {
         // Validate the authenticated user's ID
         if (!isValidUUID(user.id)) {
           console.error('Invalid user ID format:', user.id);
           throw new Error('Invalid user session. Please sign in again.');
         }
         userId = user.id;
-        console.log('Using authenticated user ID:', userId);
+        console.log('Using authenticated user ID (no session token):', userId);
       } else if (user?.isGuest) {
         // For guest users, don't send user_id - let the Edge Function handle it
         console.log('Guest user detected, letting Edge Function assign default user ID');
@@ -97,11 +119,19 @@ export function useProblemSubmission() {
         ...requestBody,
         image_data: requestBody.image_data ? '[IMAGE_DATA]' : undefined,
       });
+      console.log('Using auth headers:', Object.keys(authHeaders));
 
-      // Call the Supabase Edge Function
-      const { data: response, error: submitError } = await supabase.functions.invoke('submit-problem', {
+      // Call the Supabase Edge Function with proper authentication
+      const invokeOptions: any = {
         body: requestBody
-      });
+      };
+      
+      // Add auth headers if we have them
+      if (Object.keys(authHeaders).length > 0) {
+        invokeOptions.headers = authHeaders;
+      }
+      
+      const { data: response, error: submitError } = await supabase.functions.invoke('submit-problem', invokeOptions);
 
       console.log('Edge Function response:', response);
       console.log('Edge Function error:', submitError);
@@ -114,9 +144,22 @@ export function useProblemSubmission() {
         
         // Check for specific error types
         if (submitError.name === 'FunctionsHttpError') {
-          errorMessage = 'AI service is temporarily unavailable. Please try again later.';
+          if (submitError.context?.status === 401) {
+            errorMessage = 'Authentication failed. Please sign in again.';
+          } else if (submitError.context?.status === 403) {
+            errorMessage = 'Access denied. Please check your permissions.';
+          } else {
+            errorMessage = 'AI service is temporarily unavailable. Please try again later.';
+          }
         } else if (submitError.message) {
-          errorMessage = submitError.message;
+          // Check for auth-related error messages
+          if (submitError.message.includes('Invalid or expired authentication token') ||
+              submitError.message.includes('JWT') ||
+              submitError.message.includes('authentication')) {
+            errorMessage = 'Authentication expired. Please sign in again.';
+          } else {
+            errorMessage = submitError.message;
+          }
         } else if (typeof submitError === 'string') {
           errorMessage = submitError;
         }
@@ -206,18 +249,32 @@ export function useProblemSubmission() {
           throw new Error('Invalid problem ID format for polling');
         }
         
-        const { data, error: fetchError } = await supabase
+        // Get current session for authenticated queries
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // Build query with proper authentication context
+        let query = supabase
           .from('problem_submissions')
           .select('*')
-          .eq('id', problemId)
-          .single();
+          .eq('id', problemId);
+        
+        // For authenticated users, add user filter for security
+        if (session && user?.id) {
+          query = query.eq('user_id', user.id);
+        }
+        
+        const { data, error: fetchError } = await query.single();
 
         if (fetchError) {
           console.error('Error polling for completion:', fetchError);
           
           // Handle specific database errors
-          if (fetchError.message.includes('invalid input syntax for type uuid')) {
+          if (fetchError.code === 'PGRST116') {
+            setError('Problem not found or access denied.');
+          } else if (fetchError.message.includes('invalid input syntax for type uuid')) {
             setError('Invalid problem ID format. Please try submitting again.');
+          } else if (fetchError.message.includes('JWT') || fetchError.message.includes('authentication')) {
+            setError('Authentication expired. Please sign in again.');
           } else {
             setError(`Failed to check problem status: ${fetchError.message}`);
           }
