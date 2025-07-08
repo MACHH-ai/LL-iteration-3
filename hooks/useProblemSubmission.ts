@@ -38,18 +38,17 @@ const isValidUUID = (uuid: string): boolean => {
 };
 
 export function useProblemSubmission() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, token } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<ProblemResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const submitProblem = useCallback(async (data: ProblemSubmissionData): Promise<string | null> => {
-    // Reset previous state
     setError(null);
     setResult(null);
     setIsSubmitting(true);
 
-    // Validate input data
+    // Validate input
     if (!data.title.trim()) {
       setError('Problem title is required');
       setIsSubmitting(false);
@@ -62,49 +61,8 @@ export function useProblemSubmission() {
       return null;
     }
 
-
     try {
-      // Get current session for authentication
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        throw new Error('Authentication error. Please sign in again.');
-      }
-
-      // Determine user ID to use
-      let userId: string | undefined;
-      let authHeaders: Record<string, string> = {};
-      
-      if (session && session.access_token) {
-        // Authenticated user with valid session
-        authHeaders.Authorization = `Bearer ${session.access_token}`;
-        
-        if (user?.id && isValidUUID(user.id)) {
-          userId = user.id;
-          console.log('Using authenticated user ID:', userId);
-        } else {
-          console.error('Invalid user ID format:', user?.id);
-          throw new Error('Invalid user session. Please sign in again.');
-        }
-      } else if (isAuthenticated && user?.id) {
-        // Validate the authenticated user's ID
-        if (!isValidUUID(user.id)) {
-          console.error('Invalid user ID format:', user.id);
-          throw new Error('Invalid user session. Please sign in again.');
-        }
-        userId = user.id;
-        console.log('Using authenticated user ID (no session token):', userId);
-      } else if (user?.isGuest) {
-        // For guest users, don't send user_id - let the Edge Function handle it
-        console.log('Guest user detected, letting Edge Function assign default user ID');
-        userId = undefined;
-      } else {
-        // Not authenticated and not a guest
-        throw new Error('Please sign in to submit problems');
-      }
-
-      // Prepare request body for Edge Function
+      // Prepare request body
       const requestBody = {
         input_type: data.inputType,
         title: data.title.trim(),
@@ -112,26 +70,44 @@ export function useProblemSubmission() {
         text_content: data.textContent?.trim(),
         image_data: data.imageData,
         voice_url: data.voiceUrl,
-        user_id: userId, // Will be undefined for guests
       };
+
+      // Prepare headers - try multiple auth methods
+      const headers: Record<string, string> = {};
+      
+      // First, try to get a real Supabase session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (session?.access_token) {
+        // We have a real Supabase session
+        headers.Authorization = `Bearer ${session.access_token}`;
+        console.log('Using Supabase auth token');
+      } else if (token) {
+        // Fall back to mock auth token if available
+        headers.Authorization = `Bearer ${token}`;
+        console.log('Using mock auth token');
+      } else {
+        // No auth available - the edge function will use default user
+        console.log('No auth token available - submitting as guest');
+      }
 
       console.log('Submitting problem with data:', {
         ...requestBody,
         image_data: requestBody.image_data ? '[IMAGE_DATA]' : undefined,
       });
-      console.log('Using auth headers:', Object.keys(authHeaders));
 
-      // Call the Supabase Edge Function with proper authentication
-      const invokeOptions: any = {
-        body: requestBody
-      };
+      // Invoke the edge function
+      const invokeOptions: any = { body: requestBody };
       
-      // Add auth headers if we have them
-      if (Object.keys(authHeaders).length > 0) {
-        invokeOptions.headers = authHeaders;
+      // Only add headers if we have auth
+      if (Object.keys(headers).length > 0) {
+        invokeOptions.headers = headers;
       }
       
-      const { data: response, error: submitError } = await supabase.functions.invoke('submit-problem', invokeOptions);
+      const { data: response, error: submitError } = await supabase.functions.invoke(
+        'submit-problem',
+        invokeOptions
+      );
 
       console.log('Edge Function response:', response);
       console.log('Edge Function error:', submitError);
@@ -139,29 +115,12 @@ export function useProblemSubmission() {
       if (submitError) {
         console.error('Edge Function submission error:', submitError);
         
-        // Handle different types of Edge Function errors
         let errorMessage = 'Failed to submit problem to AI service';
         
-        // Check for specific error types
         if (submitError.name === 'FunctionsHttpError') {
-          if (submitError.context?.status === 401) {
-            errorMessage = 'Authentication failed. Please sign in again.';
-          } else if (submitError.context?.status === 403) {
-            errorMessage = 'Access denied. Please check your permissions.';
-          } else {
-            errorMessage = 'AI service is temporarily unavailable. Please try again later.';
-          }
+          errorMessage = 'AI service is temporarily unavailable. Please try again later.';
         } else if (submitError.message) {
-          // Check for auth-related error messages
-          if (submitError.message.includes('Invalid or expired authentication token') ||
-              submitError.message.includes('JWT') ||
-              submitError.message.includes('authentication')) {
-            errorMessage = 'Authentication expired. Please sign in again.';
-          } else {
-            errorMessage = submitError.message;
-          }
-        } else if (typeof submitError === 'string') {
-          errorMessage = submitError;
+          errorMessage = submitError.message;
         }
         
         throw new Error(errorMessage);
@@ -171,29 +130,21 @@ export function useProblemSubmission() {
         throw new Error('No response received from AI service');
       }
 
-      // Check if the response indicates an error
       if (!response.success) {
-        const errorMsg = response.error || response.details || 'AI processing failed';
-        console.error('Server response error:', errorMsg);
-        throw new Error(`AI service error: ${errorMsg}`);
+        const errorMsg = response.error || 'AI processing failed';
+        throw new Error(errorMsg);
       }
 
-      if (!response.problemId) {
-        throw new Error('Invalid response from AI service: missing problem ID');
-      }
-
-      // Validate the returned problem ID
-      if (!isValidUUID(response.problemId)) {
-        console.error('Invalid problem ID format received:', response.problemId);
-        throw new Error('Invalid response format from AI service');
+      if (!response.problemId || !isValidUUID(response.problemId)) {
+        throw new Error('Invalid response from AI service');
       }
 
       console.log('Problem submitted successfully with ID:', response.problemId);
 
-      // Set initial result based on response
+      // Set result
       const initialResult: ProblemResult = {
         id: response.problemId,
-        status: response.status || 'pending',
+        status: response.status || 'completed',
         solution: response.solution,
         subject: response.subject,
         difficulty: response.difficulty,
@@ -202,13 +153,7 @@ export function useProblemSubmission() {
 
       setResult(initialResult);
 
-      // If the problem is already completed, no need to poll
-      if (response.status === 'completed') {
-        console.log('Problem completed immediately');
-        return response.problemId;
-      }
-
-      // Start polling for completion if still processing
+      // If still processing, start polling
       if (response.status === 'processing' || response.status === 'pending') {
         console.log('Starting polling for problem completion');
         pollForCompletion(response.problemId);
@@ -223,10 +168,6 @@ export function useProblemSubmission() {
       
       if (err instanceof Error) {
         errorMessage = err.message;
-      } else if (typeof err === 'object' && err !== null) {
-        errorMessage = JSON.stringify(err);
-      } else {
-        errorMessage = String(err);
       }
       
       setError(errorMessage);
@@ -234,7 +175,7 @@ export function useProblemSubmission() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [user, isAuthenticated]);
+  }, [user, isAuthenticated, token]);
 
   const pollForCompletion = useCallback(async (problemId: string) => {
     const maxAttempts = 60; // 2 minutes with 2-second intervals
@@ -244,22 +185,18 @@ export function useProblemSubmission() {
       try {
         console.log(`Polling attempt ${attempts + 1}/${maxAttempts} for problem ${problemId}`);
         
-        // Validate problem ID before querying
         if (!isValidUUID(problemId)) {
           throw new Error('Invalid problem ID format for polling');
         }
         
-        // Get current session for authenticated queries
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        // Build query with proper authentication context
+        // Build query
         let query = supabase
           .from('problem_submissions')
           .select('*')
           .eq('id', problemId);
         
-        // For authenticated users, add user filter for security
-        if (session && user?.id) {
+        // Only filter by user if authenticated
+        if (isAuthenticated && user?.id && isValidUUID(user.id)) {
           query = query.eq('user_id', user.id);
         }
         
@@ -267,93 +204,58 @@ export function useProblemSubmission() {
 
         if (fetchError) {
           console.error('Error polling for completion:', fetchError);
-          
-          // Handle specific database errors
-          if (fetchError.code === 'PGRST116') {
-            setError('Problem not found or access denied.');
-          } else if (fetchError.message.includes('invalid input syntax for type uuid')) {
-            setError('Invalid problem ID format. Please try submitting again.');
-          } else if (fetchError.message.includes('JWT') || fetchError.message.includes('authentication')) {
-            setError('Authentication expired. Please sign in again.');
-          } else {
-            setError(`Failed to check problem status: ${fetchError.message}`);
-          }
+          setError('Failed to check problem status');
           return;
         }
 
         if (!data) {
-          console.error('No data returned for problem ID:', problemId);
-          setError('Problem not found. Please try submitting again.');
+          setError('Problem not found');
           return;
         }
 
-        console.log('Poll result for problem', problemId, ':', {
+        console.log('Poll result:', {
           status: data.status,
           hasSolution: !!data.solution,
         });
 
-        // Extract error message from response if it exists
-        let errorMessage: string | undefined = undefined;
-        
-        if (data.status === 'error') {
-          if (typeof data.ai_response === 'object' && data.ai_response !== null) {
-            errorMessage = data.ai_response.error || data.ai_response.message || data.error_message || 'Problem processing failed';
-          } else {
-            errorMessage = data.error_message || 'Problem processing failed';
-          }
-        }
-
-        // Extract tags from ai_response if they exist
-        let tags: string[] | undefined = undefined;
-        
-        if (typeof data.ai_response === 'object' && 
-            data.ai_response !== null && 
-            Array.isArray(data.ai_response.suggested_tags)) {
-          tags = data.ai_response.suggested_tags;
-        } else if (Array.isArray(data.tags)) {
-          tags = data.tags;
-        }
-
+        // Update result
         const newResult: ProblemResult = {
           id: data.id,
           status: data.status,
           solution: data.solution || undefined,
-          explanation: data.explanation || data.solution || undefined,
+          explanation: data.solution || undefined,
           subject: data.topic || data.subject || undefined,
           difficulty: data.difficulty || undefined,
-          tags: tags,
-          errorMessage: errorMessage,
+          tags: data.tags || undefined,
+          errorMessage: data.error_message || undefined,
         };
 
-        console.log('Updating result with:', newResult);
         setResult(newResult);
 
         // Stop polling if completed or error
         if (data.status === 'completed' || data.status === 'error') {
           if (data.status === 'error') {
-            setError(errorMessage || 'Problem processing failed');
+            setError(data.error_message || 'Problem processing failed');
           }
           return;
         }
 
-        // Continue polling if not completed and within max attempts
+        // Continue polling
         attempts++;
         if (attempts < maxAttempts) {
           setTimeout(poll, 2000);
         } else {
-          console.error('Polling timeout reached for problem:', problemId);
-          setError('Problem processing timed out. Please try again.');
+          setError('Problem processing timed out');
         }
       } catch (err) {
-        console.error('Polling error for problem', problemId, ':', err);
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        setError(`Failed to check problem status: ${errorMsg}`);
+        console.error('Polling error:', err);
+        setError('Failed to check problem status');
       }
     };
 
     // Start polling after a short delay
     setTimeout(poll, 1000);
-  }, []);
+  }, [isAuthenticated, user]);
 
   const clearResult = useCallback(() => {
     setResult(null);
