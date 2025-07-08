@@ -105,7 +105,7 @@ export function useProblemSubmission() {
       }
       
       const { data: response, error: submitError } = await supabase.functions.invoke(
-        'secure-submit-problem',
+        'submit-problem',
         invokeOptions
       );
 
