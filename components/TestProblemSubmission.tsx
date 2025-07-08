@@ -1,8 +1,11 @@
-// TestProblemSubmission.tsx
 import { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { supabase } from '@/lib/supabase';
+import { useTheme } from '@/contexts/ThemeContext';
+import LoadingSpinner from './LoadingSpinner';
 
 export default function TestProblemSubmission() {
+  const { colors } = useTheme();
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -73,40 +76,47 @@ export default function TestProblemSubmission() {
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">Test Problem Submission</h1>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Test Problem Submission</Text>
       
-      <div className="flex gap-4 mb-4">
-        <button
-          onClick={testSubmitProblem}
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: colors.primary }]}
+          onPress={testSubmitProblem}
           disabled={loading}
-          className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-blue-300"
         >
-          {loading ? 'Testing...' : 'Test Submit Problem'}
-        </button>
+          {loading ? (
+            <LoadingSpinner size={16} color="#FFFFFF" />
+          ) : (
+            <Text style={styles.buttonText}>Test Submit Problem</Text>
+          )}
+        </TouchableOpacity>
         
-        <button
-          onClick={testGeminiApi}
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: colors.success }]}
+          onPress={testGeminiApi}
           disabled={loading}
-          className="px-4 py-2 bg-green-500 text-white rounded disabled:bg-green-300"
         >
-          {loading ? 'Testing...' : 'Test Gemini API'}
-        </button>
-      </div>
+          {loading ? (
+            <LoadingSpinner size={16} color="#FFFFFF" />
+          ) : (
+            <Text style={styles.buttonText}>Test Gemini API</Text>
+          )}
+        </TouchableOpacity>
+      </View>
       
       {error && (
-        <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded mb-4">
-          <p className="font-bold">Error:</p>
-          <pre className="whitespace-pre-wrap">{error}</pre>
-        </div>
+        <View style={[styles.errorContainer, { backgroundColor: colors.error + '20', borderColor: colors.error }]}>
+          <Text style={[styles.errorTitle, { color: colors.error }]}>Error:</Text>
+          <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+        </View>
       )}
       
       {result && (
-        <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-          <p className="font-bold">Result:</p>
-          <pre className="whitespace-pre-wrap">{JSON.stringify(result, null, 2)}</pre>
-        </div>
+        <View style={[styles.resultContainer, { backgroundColor: colors.success + '20', borderColor: colors.success }]}>
+          <Text style={[styles.resultTitle, { color: colors.success }]}>Result:</Text>
+          <Text style={[styles.resultText, { color: colors.text }]}>{JSON.stringify(result, null, 2)}</Text>
+        </View>
       )}
-    </div>
+    </View>
   );
-}

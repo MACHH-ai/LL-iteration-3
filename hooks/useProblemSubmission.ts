@@ -109,41 +109,40 @@ export function useProblemSubmission() {
       if (submitError) {
         console.error('Edge Function submission error:', submitError);
         
-        // Handle different types of errors
-        let errorMessage = 'Failed to submit problem';
+        // Handle different types of Edge Function errors
+        let errorMessage = 'Failed to submit problem to AI service';
         
-        if (typeof submitError === 'object' && submitError !== null) {
-          if ('message' in submitError) {
-            errorMessage = String(submitError.message);
-          } else {
-            errorMessage = JSON.stringify(submitError);
-          }
-        } else {
-          errorMessage = String(submitError);
+        // Check for specific error types
+        if (submitError.name === 'FunctionsHttpError') {
+          errorMessage = 'AI service is temporarily unavailable. Please try again later.';
+        } else if (submitError.message) {
+          errorMessage = submitError.message;
+        } else if (typeof submitError === 'string') {
+          errorMessage = submitError;
         }
         
         throw new Error(errorMessage);
       }
 
       if (!response) {
-        throw new Error('No response received from server');
+        throw new Error('No response received from AI service');
       }
 
       // Check if the response indicates an error
       if (!response.success) {
-        const errorMsg = response.error || response.details || 'Unknown server error';
+        const errorMsg = response.error || response.details || 'AI processing failed';
         console.error('Server response error:', errorMsg);
-        throw new Error(`Server error: ${errorMsg}`);
+        throw new Error(`AI service error: ${errorMsg}`);
       }
 
       if (!response.problemId) {
-        throw new Error('Invalid response: missing problem ID');
+        throw new Error('Invalid response from AI service: missing problem ID');
       }
 
       // Validate the returned problem ID
       if (!isValidUUID(response.problemId)) {
         console.error('Invalid problem ID format received:', response.problemId);
-        throw new Error('Invalid response format from server');
+        throw new Error('Invalid response format from AI service');
       }
 
       console.log('Problem submitted successfully with ID:', response.problemId);

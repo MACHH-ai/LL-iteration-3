@@ -42,6 +42,8 @@ serve(async (req) => {
 
   try {
     console.log('=== Submit Problem Function Started ===');
+    console.log('Request method:', req.method);
+    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
     
     // Initialize Supabase client
     const supabaseClient = createClient(
@@ -55,6 +57,14 @@ serve(async (req) => {
       }
     )
 
+    // Validate environment variables
+    if (!Deno.env.get('SUPABASE_URL')) {
+      throw new Error('SUPABASE_URL environment variable is missing');
+    }
+    
+    if (!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is missing');
+    }
     const requestBody: ProblemSubmissionRequest = await req.json()
     console.log('Received request body:', requestBody)
 

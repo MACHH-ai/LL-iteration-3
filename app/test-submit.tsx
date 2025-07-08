@@ -158,6 +158,15 @@ export default function TestSubmitScreen() {
             </Text>
           </View>
 
+          <View style={[styles.docCard, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.docTitle, { color: colors.text }]}>Common Error Solutions</Text>
+            <Text style={[styles.docText, { color: colors.textSecondary }]}>
+              • FunctionsHttpError: Edge Function not deployed or crashed{'\n'}
+              • Missing GOOGLE_API_KEY: Environment variable not set{'\n'}
+              • Invalid UUID: Check user_id format{'\n'}
+              • Network timeout: Check internet connection
+            </Text>
+          </View>
           <View style={[styles.configCard, { backgroundColor: colors.surface }]}>
             <Text style={[styles.configTitle, { color: colors.text }]}>Request Payload</Text>
             <View style={[styles.codeBlock, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>

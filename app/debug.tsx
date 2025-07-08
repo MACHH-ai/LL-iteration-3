@@ -105,7 +105,18 @@ export default function DebugScreen() {
       console.log('Submit Problem Response error:', functionError);
       
       if (functionError) {
-        throw new Error(`Function error: ${JSON.stringify(functionError)}`);
+        // Handle specific Edge Function errors
+        let errorMessage = 'Edge Function failed';
+        
+        if (functionError.name === 'FunctionsHttpError') {
+          errorMessage = 'Edge Function HTTP Error - Function may not be deployed or crashed';
+        } else if (functionError.message) {
+          errorMessage = functionError.message;
+        } else {
+          errorMessage = JSON.stringify(functionError);
+        }
+        
+        throw new Error(errorMessage);
       }
       
       setResult({
