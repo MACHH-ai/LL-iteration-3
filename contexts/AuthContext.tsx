@@ -269,6 +269,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear all stored authentication data
       await deleteSecurely('auth_token');
       await deleteSecurely('user_data');
+      await deleteSecurely('supabase_session');
       
       // Also clear any other stored preferences that might contain user data
       try {

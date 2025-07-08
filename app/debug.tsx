@@ -78,6 +78,13 @@ export default function DebugScreen() {
     try {
       console.log('Testing submit-problem function...');
       
+      // Get current session for authentication
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+      }
+      
       // Generate a valid test UUID for user_id
       const testUserId = generateTestUUID();
       console.log('Generated test user ID:', testUserId);
@@ -97,9 +104,21 @@ export default function DebugScreen() {
       
       console.log('Test submission data:', testSubmission);
       
-      const { data, error: functionError } = await supabase.functions.invoke('submit-problem', {
+      // Prepare request options with auth if available
+      const requestOptions: any = {
         body: testSubmission
-      });
+      };
+      
+      if (session && session.access_token) {
+        requestOptions.headers = {
+          Authorization: `Bearer ${session.access_token}`
+        };
+        console.log('Using authentication token for test');
+      } else {
+        console.log('No authentication token available for test');
+      }
+      
+      const { data, error: functionError } = await supabase.functions.invoke('submit-problem', requestOptions);
       
       console.log('Submit Problem Response data:', data);
       console.log('Submit Problem Response error:', functionError);

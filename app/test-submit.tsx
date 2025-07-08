@@ -74,10 +74,30 @@ export default function TestSubmitScreen() {
       console.log('Submitting test request to submit-problem Edge Function...');
       console.log('Payload:', testPayload);
 
-      // Make the POST request to the Edge Function
-      const { data, error } = await supabase.functions.invoke('submit-problem', {
+      // Get current session for authentication
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.warn('Session error:', sessionError);
+      }
+      
+      // Prepare request options
+      const requestOptions: any = {
         body: testPayload
-      });
+      };
+      
+      // Add authentication if available
+      if (session && session.access_token) {
+        requestOptions.headers = {
+          Authorization: `Bearer ${session.access_token}`
+        };
+        console.log('Using authentication token for test request');
+      } else {
+        console.log('No authentication token available - using anonymous request');
+      }
+      
+      // Make the POST request to the Edge Function
+      const { data, error } = await supabase.functions.invoke('submit-problem', requestOptions);
 
       const duration = Date.now() - startTime;
 
