@@ -8,7 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Upload, Shield, CheckCircle, XCircle, AlertTriangle } from 'lucide-react-native';
+import { Upload, Shield, CircleCheck as CheckCircle, Circle as XCircle, TriangleAlert as AlertTriangle } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { mediaUploadManager } from '@/lib/mediaUpload';
