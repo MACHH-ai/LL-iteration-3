@@ -11,7 +11,16 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, router } from 'expo-router';
-import { Eye, EyeOff, Mail, Lock, User, UserPlus, ArrowRight } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+// Icon mapping for replacement
+const Eye = (props) => <Ionicons name="eye-outline" {...props} />;
+const EyeOff = (props) => <Ionicons name="eye-off-outline" {...props} />;
+const Mail = (props) => <Ionicons name="mail-outline" {...props} />;
+const Lock = (props) => <Ionicons name="lock-closed-outline" {...props} />;
+const User = (props) => <Ionicons name="person-outline" {...props} />;
+const UserPlus = (props) => <Ionicons name="person-add-outline" {...props} />;
+const ArrowRight = (props) => <Ionicons name="arrow-forward-outline" {...props} />;
 import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
