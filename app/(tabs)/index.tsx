@@ -185,7 +185,7 @@ export default function HomeScreen() {
     },
     {
       id: '3',
-      title: 'Newton's Laws',
+      title: "Newton's Laws",
       subject: 'Physics',
       timeAgo: '2 days ago',
       difficulty: 'hard',
