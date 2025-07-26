@@ -12,20 +12,21 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { 
-  RefreshCw, 
-  Search, 
-  Filter,
-  Type,
-  Mic,
-  Camera,
-  X,
-  Send,
-  Square,
-  Play,
-  Pause,
-  ArrowLeft
-} from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+// Icon mapping for replacement
+const RefreshCw = (props) => <Ionicons name="refresh-outline" {...props} />;
+const Search = (props) => <Ionicons name="search-outline" {...props} />;
+const Filter = (props) => <Ionicons name="filter-outline" {...props} />;
+const Type = (props) => <Ionicons name="text-outline" {...props} />;
+const Mic = (props) => <Ionicons name="mic-outline" {...props} />;
+const Camera = (props) => <Ionicons name="camera-outline" {...props} />;
+const X = (props) => <Ionicons name="close-outline" {...props} />;
+const Send = (props) => <Ionicons name="send-outline" {...props} />;
+const Square = (props) => <Ionicons name="square-outline" {...props} />;
+const Play = (props) => <Ionicons name="play-outline" {...props} />;
+const Pause = (props) => <Ionicons name="pause-outline" {...props} />;
+const ArrowLeft = (props) => <Ionicons name="arrow-back-outline" {...props} />;
 import ProblemPreview from '@/components/ProblemPreview';
 import InputMethodCard from '@/components/InputMethodCard';
 import PulsingActionButton from '@/components/PulsingActionButton';
