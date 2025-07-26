@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TextInput, Button } from 'react-native';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/Auth/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 // Define the type for a single todo item
