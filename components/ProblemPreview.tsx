@@ -9,7 +9,16 @@ import {
   Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Clock, Tag, ChevronDown, ChevronUp, Mic, Camera, Type } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+// Icon mapping for replacement
+const Clock = (props) => <Ionicons name="time-outline" {...props} />;
+const Tag = (props) => <Ionicons name="pricetag-outline" {...props} />;
+const ChevronDown = (props) => <Ionicons name="chevron-down-outline" {...props} />;
+const ChevronUp = (props) => <Ionicons name="chevron-up-outline" {...props} />;
+const Mic = (props) => <Ionicons name="mic-outline" {...props} />;
+const Camera = (props) => <Ionicons name="camera-outline" {...props} />;
+const Type = (props) => <Ionicons name="text-outline" {...props} />;
 import { ProblemEntry } from '@/types/learning';
 import { useTheme } from '@/contexts/ThemeContext';
 
