@@ -6,7 +6,10 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Plus } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+// Icon mapping for replacement
+const Plus = (props) => <Ionicons name="add-outline" {...props} />;
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface PulsingActionButtonProps {
