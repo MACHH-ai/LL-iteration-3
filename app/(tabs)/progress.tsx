@@ -11,7 +11,22 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { TrendingUp, Calendar, Award, Target, Book, Clock, Star, Flame, Trophy, ChevronRight, ChartBar as BarChart3, Users, Zap } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+// Icon mapping for replacement
+const TrendingUp = (props) => <Ionicons name="trending-up-outline" {...props} />;
+const Calendar = (props) => <Ionicons name="calendar-outline" {...props} />;
+const Award = (props) => <Ionicons name="award-outline" {...props} />;
+const Target = (props) => <Ionicons name="aperture-outline" {...props} />;
+const Book = (props) => <Ionicons name="book-outline" {...props} />;
+const Clock = (props) => <Ionicons name="time-outline" {...props} />;
+const Star = (props) => <Ionicons name="star-outline" {...props} />;
+const Flame = (props) => <Ionicons name="flame-outline" {...props} />;
+const Trophy = (props) => <Ionicons name="trophy-outline" {...props} />;
+const ChevronRight = (props) => <Ionicons name="chevron-forward-outline" {...props} />;
+const BarChart3 = (props) => <Ionicons name="bar-chart-outline" {...props} />;
+const Users = (props) => <Ionicons name="people-outline" {...props} />;
+const Zap = (props) => <Ionicons name="flash-outline" {...props} />;
 
 import AnimatedCounter from '@/components/AnimatedCounter';
 import ProgressRing from '@/components/ProgressRing';
