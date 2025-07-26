@@ -9,27 +9,32 @@ import {
   Dimensions,
   Animated,
   RefreshControl,
+  TextInput,
+  Button,
+  FlatList,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { 
-  BookOpen, 
-  TrendingUp, 
-  Target, 
-  Clock, 
-  Star, 
-  Flame, 
-  Trophy, 
-  ChevronRight,
-  Zap,
-  Brain,
-  Users,
-  Award
-} from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import GuestBanner from '@/components/GuestBanner';
+import { supabase } from '@/lib/supabase';
 
 const { width } = Dimensions.get('window');
+
+// Icon mapping for replacement
+const BookOpen = (props) => <Ionicons name="book-outline" {...props} />;
+const TrendingUp = (props) => <Ionicons name="trending-up-outline" {...props} />;
+const Target = (props) => <Ionicons name="aperture-outline" {...props} />;
+const Clock = (props) => <Ionicons name="time-outline" {...props} />;
+const Star = (props) => <Ionicons name="star-outline" {...props} />;
+const Flame = (props) => <Ionicons name="flame-outline" {...props} />;
+const Trophy = (props) => <Ionicons name="trophy-outline" {...props} />;
+const ChevronRight = (props) => <Ionicons name="chevron-forward-outline" {...props} />;
+const Zap = (props) => <Ionicons name="flash-outline" {...props} />;
+const Brain = (props) => <Ionicons name="brain-outline" {...props} />;
+const Users = (props) => <Ionicons name="people-outline" {...props} />;
+const Award = (props) => <Ionicons name="ribbon-outline" {...props} />;
 
 interface QuickAction {
   id: string;
@@ -59,12 +64,21 @@ interface Achievement {
   maxProgress: number;
 }
 
+type Todo = {
+  id: number;
+  title: string;
+  is_complete: boolean;
+};
+
 export default function HomeScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [newTodoTitle, setNewTodoTitle] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Animated.parallel([
@@ -80,6 +94,43 @@ export default function HomeScreen() {
       }),
     ]).start();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchTodos();
+    }
+  }, [user]);
+
+  const fetchTodos = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('todos')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching todos:', error);
+    } else {
+      setTodos(data as Todo[]);
+    }
+    setLoading(false);
+  };
+
+  const addTodo = async () => {
+    if (!newTodoTitle.trim() || !user) return;
+
+    const { data, error } = await supabase
+      .from('todos')
+      .insert([{ title: newTodoTitle, user_id: user.id }])
+      .select();
+
+    if (error) {
+      console.error('Error adding todo:', error);
+    } else if (data) {
+      setTodos([data[0] as Todo, ...todos]);
+      setNewTodoTitle('');
+    }
+  };
 
   const quickActions: QuickAction[] = [
     {
@@ -175,8 +226,7 @@ export default function HomeScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await fetchTodos();
     setRefreshing(false);
   };
 
@@ -222,7 +272,7 @@ export default function HomeScreen() {
         >
           <View style={styles.welcomeSection}>
             <Text style={[styles.greeting, { color: colors.textSecondary }]}>
-              {getGreeting()}, {user?.firstName || 'Learner'}! 👋
+              {getGreeting()}, {user?.firstName || 'Learner'} 👋
             </Text>
             <Text style={[styles.welcomeTitle, { color: colors.text }]}>
               Ready to learn something new?
@@ -265,6 +315,30 @@ export default function HomeScreen() {
       <View style={styles.content}>
         {/* Guest Banner */}
         {user?.isGuest && <GuestBanner />}
+
+        {/* Todos List */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>My Todos</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Add a new todo..."
+              value={newTodoTitle}
+              onChangeText={setNewTodoTitle}
+            />
+            <Button title="Add" onPress={addTodo} />
+          </View>
+          <FlatList
+            data={todos}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <View style={styles.todoItem}>
+                <Text style={item.is_complete ? styles.completed : {}}>{item.title}</Text>
+              </View>
+            )}
+            ListEmptyComponent={<Text>No todos yet. Add one!</Text>}
+          />
+        </View>
 
         {/* Quick Actions */}
         <Animated.View
@@ -658,5 +732,26 @@ const styles = StyleSheet.create({
   quoteAuthor: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  input: {
+    flex: 1,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    padding: 10,
+    marginRight: 10,
+    borderRadius: 5,
+  },
+  todoItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  completed: {
+    textDecorationLine: 'line-through',
+    color: '#aaa',
   },
 });
