@@ -1,7 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { Achievement } from '@/types/progress';
-import { Star, Trophy, Target, Flame } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+// Icon mapping for replacement
+const Star = (props) => <Ionicons name="star-outline" {...props} />;
+const Trophy = (props) => <Ionicons name="trophy-outline" {...props} />;
+const Target = (props) => <Ionicons name="aperture-outline" {...props} />;
+const Flame = (props) => <Ionicons name="flame-outline" {...props} />;
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface AchievementBadgeProps {
