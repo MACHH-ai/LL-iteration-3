@@ -10,13 +10,14 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { 
-  Camera as CameraIcon, 
-  RotateCcw, 
-  Image as ImageIcon, 
-  X,
-  Zap
-} from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+// Icon mapping for replacement
+const CameraIcon = (props) => <Ionicons name="camera-outline" {...props} />;
+const RotateCcw = (props) => <Ionicons name="camera-reverse-outline" {...props} />;
+const ImageIcon = (props) => <Ionicons name="image-outline" {...props} />;
+const X = (props) => <Ionicons name="close-outline" {...props} />;
+const Zap = (props) => <Ionicons name="flash-outline" {...props} />;
 import { 
   CameraViewComponent, 
   CameraTypeEnum, 
