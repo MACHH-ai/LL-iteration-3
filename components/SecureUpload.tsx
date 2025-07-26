@@ -8,7 +8,14 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Upload, Shield, CircleCheck as CheckCircle, Circle as XCircle, TriangleAlert as AlertTriangle } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+// Icon mapping for replacement
+const Upload = (props) => <Ionicons name="cloud-upload-outline" {...props} />;
+const Shield = (props) => <Ionicons name="shield-checkmark-outline" {...props} />;
+const CheckCircle = (props) => <Ionicons name="checkmark-circle-outline" {...props} />;
+const XCircle = (props) => <Ionicons name="close-circle-outline" {...props} />;
+const AlertTriangle = (props) => <Ionicons name="warning-outline" {...props} />;
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { mediaUploadManager } from '@/lib/mediaUpload';
