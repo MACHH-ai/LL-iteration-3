@@ -8,7 +8,23 @@ import {
   Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { User, Settings, Bell, Shield, CircleHelp as HelpCircle, LogOut, Camera, Moon, Volume2, Monitor, Users, Crown, ChevronRight, Smartphone } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+// Icon mapping for replacement
+const User = (props) => <Ionicons name="person-outline" {...props} />;
+const Settings = (props) => <Ionicons name="settings-outline" {...props} />;
+const Bell = (props) => <Ionicons name="notifications-outline" {...props} />;
+const Shield = (props) => <Ionicons name="shield-checkmark-outline" {...props} />;
+const HelpCircle = (props) => <Ionicons name="help-circle-outline" {...props} />;
+const LogOut = (props) => <Ionicons name="log-out-outline" {...props} />;
+const Camera = (props) => <Ionicons name="camera-outline" {...props} />;
+const Moon = (props) => <Ionicons name="moon-outline" {...props} />;
+const Volume2 = (props) => <Ionicons name="volume-medium-outline" {...props} />;
+const Monitor = (props) => <Ionicons name="desktop-outline" {...props} />;
+const Users = (props) => <Ionicons name="people-outline" {...props} />;
+const Crown = (props) => <Ionicons name="ribbon-outline" {...props} />;
+const ChevronRight = (props) => <Ionicons name="chevron-forward-outline" {...props} />;
+const Smartphone = (props) => <Ionicons name="phone-portrait-outline" {...props} />;
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
