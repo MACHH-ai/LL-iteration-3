@@ -1,7 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { UserPlus, X } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+// Icon mapping for replacement
+const UserPlus = (props) => <Ionicons name="person-add-outline" {...props} />;
+const X = (props) => <Ionicons name="close-outline" {...props} />;
 import { router } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
 
