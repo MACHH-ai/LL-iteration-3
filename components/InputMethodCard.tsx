@@ -7,7 +7,12 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Type, Mic, Camera } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+// Icon mapping for replacement
+const Type = (props) => <Ionicons name="text-outline" {...props} />;
+const Mic = (props) => <Ionicons name="mic-outline" {...props} />;
+const Camera = (props) => <Ionicons name="camera-outline" {...props} />;
 import { InputMethod } from '@/types/learning';
 import { useTheme } from '@/contexts/ThemeContext';
 
