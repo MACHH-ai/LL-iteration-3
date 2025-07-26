@@ -11,7 +11,12 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, router } from 'expo-router';
-import { Mail, ArrowLeft, Send } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+// Icon mapping for replacement
+const Mail = (props) => <Ionicons name="mail-outline" {...props} />;
+const ArrowLeft = (props) => <Ionicons name="arrow-back-outline" {...props} />;
+const Send = (props) => <Ionicons name="send-outline" {...props} />;
 import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
