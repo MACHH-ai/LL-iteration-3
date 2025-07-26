@@ -10,7 +10,6 @@ import {
   Animated,
   RefreshControl,
   TextInput,
-  Button,
   FlatList,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -317,28 +316,46 @@ export default function HomeScreen() {
         {user?.isGuest && <GuestBanner />}
 
         {/* Todos List */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>My Todos</Text>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Add a new todo..."
-              value={newTodoTitle}
-              onChangeText={setNewTodoTitle}
-            />
-            <Button title="Add" onPress={addTodo} />
+        <Animated.View
+          style={[
+            styles.section,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>My Todos</Text>
           </View>
-          <FlatList
-            data={todos}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <View style={styles.todoItem}>
-                <Text style={item.is_complete ? styles.completed : {}}>{item.title}</Text>
-              </View>
-            )}
-            ListEmptyComponent={<Text>No todos yet. Add one!</Text>}
-          />
-        </View>
+          <View style={[styles.todoCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+            <View style={styles.todoInputContainer}>
+              <TextInput
+                style={[styles.todoInput, { borderColor: colors.border, color: colors.text }]}
+                placeholder="Add a new todo..."
+                placeholderTextColor={colors.textSecondary}
+                value={newTodoTitle}
+                onChangeText={setNewTodoTitle}
+              />
+              <TouchableOpacity
+                style={[styles.addTodoButton, { backgroundColor: colors.primary }]}
+                onPress={addTodo}
+              >
+                <Ionicons name="add" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={todos}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => (
+                <View style={[styles.todoListItem, { borderBottomColor: colors.border }]}>
+                  <Text style={[item.is_complete ? styles.completed : { color: colors.text }]}>{item.title}</Text>
+                </View>
+              )}
+              ListEmptyComponent={<Text style={{ color: colors.textSecondary, textAlign: 'center', paddingVertical: 10 }}>No todos yet. Add one!</Text>}
+            />
+          </View>
+        </Animated.View>
 
         {/* Quick Actions */}
         <Animated.View
@@ -733,25 +750,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  inputContainer: {
+  todoCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  todoInputContainer: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: 15,
   },
-  input: {
+  todoInput: {
     flex: 1,
-    borderColor: '#ccc',
     borderWidth: 1,
-    padding: 10,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
     marginRight: 10,
-    borderRadius: 5,
   },
-  todoItem: {
-    padding: 15,
+  addTodoButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  todoListItem: {
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   completed: {
     textDecorationLine: 'line-through',
     color: '#aaa',
   },
-});
